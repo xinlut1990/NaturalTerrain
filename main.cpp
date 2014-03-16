@@ -23,11 +23,13 @@ unsigned char *image;
 
 GLuint pickingProgram;
 GLuint p;
+GLuint p1;
 
 int xPick;
 int yPick;
 
 Terrain * pTerrain = NULL;
+Terrain * pWater = NULL;
  
 // uniform var locations
 GLuint projMatrixLoc, viewMatrixLoc;
@@ -74,7 +76,7 @@ void initTex() {
 	glActiveTexture(GL_TEXTURE1);
 	texName[0] = SOIL_load_OGL_texture
 		(
-		"creeper.bmp",
+		"Grass.bmp",
 		SOIL_LOAD_AUTO,
 		SOIL_CREATE_NEW_ID,
 		SOIL_FLAG_INVERT_Y
@@ -97,21 +99,6 @@ void initTex() {
 	
 	//glBindTexture(GL_TEXTURE_2D, texName[1]);
 	
-}
- 
-
-void Init2DTextures(UINT textureArray[], char *bmpFileName, int ID)
-{
-	BITMAPINFO* TexInfo;
-	GLubyte* TexBits = LoadDIBitmap(bmpFileName, &TexInfo);
-	if(TexBits == NULL)	exit(0);
-	
-	glGenTextures(1, &textureArray[ID]);
-	glBindTexture(GL_TEXTURE_2D, textureArray[ID]);
-
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, 3, TexInfo->bmiHeader.biWidth,TexInfo->bmiHeader.biHeight, 0, GL_BGR_EXT,GL_UNSIGNED_BYTE,TexBits);
 }
 
  
@@ -140,8 +127,9 @@ void changeSize(int w, int h) {
  
 void setupBuffers() {
 
+	
+	//pWater->loadIntoBuffer();
 	pTerrain->loadIntoBuffer();
-
 }
  
 void setUniforms() {
@@ -203,6 +191,12 @@ void renderScene(void) {
 	pTerrain->beginRender();
 	setUniforms();
 	pTerrain->render();
+
+	//pWater->beginRender();
+	//setUniforms();
+	//pWater->render();
+
+	glutSwapBuffers();
 }
  
 
@@ -273,9 +267,10 @@ void initShaders() {
  
 
 	p = buildShader(vertexFileName, fragmentFileName);
+	p1 = buildShader(vertexFileName, fragmentFileName);
 
 	pTerrain = new Terrain(p, vec3(0.0f, 0.0f, 0.0f), 100, 100, 1.0f, 1.0f);
-
+	pWater = new Terrain(p, vec3(0.0f, 5.0f, 0.0f), 100, 100, 1.0f, 1.0f);
 
     projMatrixLoc = glGetUniformLocation(p, "projMatrix");
     viewMatrixLoc = glGetUniformLocation(p, "viewMatrix");
@@ -409,6 +404,6 @@ int main(int argc, char **argv)
     glutMainLoop();
  
 	delete(pTerrain);
-
+	delete(pWater);
     return(0); 
 }

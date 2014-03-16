@@ -1,6 +1,7 @@
 #include <iostream>
 #include "myMath.h"
 #include "Renderable.h"
+#include "noise.h"
 
 using namespace std;
 
@@ -20,6 +21,7 @@ private:
 	int height;
 	float gridW;
 	float gridH;
+	PerlinNoise* heightGenerator;
 	//data stream
 
 };

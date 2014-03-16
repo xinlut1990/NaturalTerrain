@@ -33,5 +33,4 @@ void Renderable::beginRender()
 void Renderable::render()
 {
 	glDrawArrays(GL_TRIANGLES, 0, vertSize / 3);
-	glutSwapBuffers();
 }
