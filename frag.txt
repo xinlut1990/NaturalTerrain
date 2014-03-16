@@ -1,0 +1,41 @@
+#version 330
+//shader for Phong shading
+uniform mat4 viewMatrix, projMatrix;
+
+uniform sampler2D tex;
+uniform sampler2D texNormal;
+uniform vec4 intensityDiff;
+uniform vec4 intensitySpec;
+uniform vec4 materialDiff;
+uniform vec4 materialSpec;
+uniform int curId;
+
+in float ID;
+in vec3 Color;
+in vec4 viewLightPos;
+
+varying vec4 n;
+varying vec4 v;
+ 
+void main()
+{	
+	vec4 color =  texture(tex, gl_TexCoord[0].st);
+	vec4 normal = texture(texNormal, gl_TexCoord[0].st);
+	//normal = clamp(2 * normal - 1 + n, 0.0, 1.0);
+	normal = n;
+	int IDtemp = int(ID);
+	vec4 lightDir = normalize(viewLightPos - v);
+	vec4 E = normalize(-v);
+	vec4 R = normalize(reflect(-lightDir, normal));
+
+	vec4 ambient = color * 0.2;
+	ambient.a = 1.0;
+	vec4 diffuse = intensityDiff * materialDiff * color * clamp(dot(lightDir, normal),0.0, 1.0);
+	vec4 specular = intensitySpec * materialSpec * color * pow(clamp(dot(E, R), 0.0, 1.0), 2);
+
+	gl_FragColor = ambient + diffuse + specular;
+
+	if(curId == ID) {
+		gl_FragColor.a = 0.5;
+	}
+}

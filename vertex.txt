@@ -1,0 +1,29 @@
+#version 330
+ 
+uniform mat4 viewMatrix, projMatrix;
+uniform float time;
+uniform vec4 lightPos;
+
+
+in float id;
+in vec4 position;
+in vec3 color;
+in vec3 normal;
+in vec2 texCoord;
+
+varying vec4 n;
+varying vec4 v;
+
+out vec4 viewLightPos;
+out float ID;
+
+void main() 
+{
+	ID = id;
+	viewLightPos = viewMatrix * lightPos;
+	v = viewMatrix * position;
+	n = normalize(viewMatrix * vec4(normal, 0.0));
+    	
+	gl_TexCoord[0] = vec4(texCoord,0,0);
+    gl_Position = projMatrix * viewMatrix * position;
+}
