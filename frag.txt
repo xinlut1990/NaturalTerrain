@@ -19,11 +19,12 @@ varying vec4 v;
  
 void main()
 {	
+	//gl_FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 	vec4 color =  texture(tex, gl_TexCoord[0].st);
 	vec4 normal = texture(texNormal, gl_TexCoord[0].st);
 	//normal = clamp(2 * normal - 1 + n, 0.0, 1.0);
 	normal = n;
-	int IDtemp = int(ID);
+
 	vec4 lightDir = normalize(viewLightPos - v);
 	vec4 E = normalize(-v);
 	vec4 R = normalize(reflect(-lightDir, normal));
@@ -33,9 +34,7 @@ void main()
 	vec4 diffuse = intensityDiff * materialDiff * color * clamp(dot(lightDir, normal),0.0, 1.0);
 	vec4 specular = intensitySpec * materialSpec * color * pow(clamp(dot(E, R), 0.0, 1.0), 2);
 
+	
 	gl_FragColor = ambient + diffuse + specular;
 
-	if(curId == ID) {
-		gl_FragColor.a = 0.5;
-	}
 }

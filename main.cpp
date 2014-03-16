@@ -8,10 +8,10 @@
 #include "fileAccessor.h"
 #include "myMath.h"
 #include "SOIL.h"
-#include "data.h"
 #include "Camera.h"
 #include "Light.h"
 #include "bitmap.h"
+#include "Terrain.h"
 
 // shader names
 char *vertexFileName = "vertex.txt";
@@ -27,10 +27,7 @@ GLuint p;
 int xPick;
 int yPick;
 
-GLubyte pixel[3];
-
-// vert attrib locations
-GLuint vertexLoc,vertex1Loc = 9, colorLoc, normalLoc, texLoc;
+Terrain * pTerrain = NULL;
  
 // uniform var locations
 GLuint projMatrixLoc, viewMatrixLoc;
@@ -46,10 +43,6 @@ GLuint specLoc;
 
 GLuint matDiffLoc;
 GLuint matSpecLoc;
-
-GLuint idLoc = 8;
-GLuint id1Loc;
-GLuint curIdLoc;
 
 int curId = 0;
  
@@ -142,60 +135,12 @@ void changeSize(int w, int h) {
     // place viewport to be the entire window
     glViewport(0, 0, w, h);
     ratio = (1.0f * w) / h;
-    buildProjMatrix(53.13f, ratio, 1.0f, 30.0f);
+    buildProjMatrix(53.13f, ratio, 1.0f, 200.0f);
 }
  
 void setupBuffers() {
 
-
-    GLuint buffers[6];
- 
-    //glGenVertexArrays(1, vert);
-
-    // first triangle
-    //glBindVertexArray(vert[0]);
-    // generate 2 buffers for vert and color
-    glGenBuffers(7, buffers);
-
-
-
-
-    // bind buffer for vertices and copy data into buffer
-    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(vertexLoc);
-    glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, 0, 0, 0);
- 
-    // bind buffer for colors and copy data into buffer
-    glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(colors1), colors1, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(colorLoc);
-    glVertexAttribPointer(colorLoc, 4, GL_FLOAT, 0, 0, 0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(normal), normal, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(normalLoc);
-    glVertexAttribPointer(normalLoc, 3, GL_FLOAT, 0, 0, 0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[3]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(tex), tex, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(texLoc);
-    glVertexAttribPointer(texLoc, 2, GL_FLOAT, 0, 0, 0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[4]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(id), id, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(id1Loc);
-    glVertexAttribPointer(id1Loc, 1, GL_FLOAT, 0, 0, 0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[5]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(id), id, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(idLoc);
-    glVertexAttribPointer(idLoc, 1, GL_FLOAT, 0, 0, 0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[6]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(vertex1Loc);
-    glVertexAttribPointer(vertex1Loc, 3, GL_FLOAT, 0, 0, 0);
+	pTerrain->loadIntoBuffer();
 
 }
  
@@ -209,8 +154,7 @@ void setUniforms() {
 
 
 	glUniform1i(samplerLoc , 1);
-		glUniform1i(samplerNormalLoc , 2);
-	glUniform1i(curIdLoc, curId);
+	glUniform1i(samplerNormalLoc , 2);
 
 	vec4 lightPos = light.getPosition();
 	glUniform4f(lightLoc, lightPos.x, lightPos.y, lightPos.z, lightPos.w);
@@ -252,31 +196,13 @@ void renderScene(void) {
  
     //placeCam(10,2,10,0,2,-5);
 
-	cam.placeCam(0,0,5,0,0,0);
+	cam.placeCam(0,10,10,0,0,0);
 	cam.zoomCam(zoom);
 	cam.rotateCam(xAngle, yAngle);
-    
 
-
-    //glBindVertexArray(vert[0]);
-	//glDrawArrays(GL_TRIANGLES,0,36);
-    //glutSwapBuffers();
-
-	glUseProgram(pickingProgram);
-	setUniformsPick();
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-	//glutSwapBuffers();
-
-
-	//printf("X: %d, Y: %d\n",xPick,yPick);
-	glReadPixels(xPick, yPick,1,1,GL_RGB, GL_UNSIGNED_BYTE, (void*)pixel);
-	//printf("R: %d, G: %d, B: %d\n",pixel[0],pixel[1],pixel[2]);
-
-	 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  
-	glUseProgram(p);	
+	pTerrain->beginRender();
 	setUniforms();
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glutSwapBuffers();
+	pTerrain->render();
 }
  
 
@@ -348,24 +274,8 @@ void initShaders() {
 
 	p = buildShader(vertexFileName, fragmentFileName);
 
-	pickingProgram = buildShader(vertPickingFileName, fragPickingFileName);
-	glBindAttribLocation(pickingProgram, idLoc, "id");
-    glBindAttribLocation(pickingProgram, vertex1Loc, "position"); 
+	pTerrain = new Terrain(p, vec3(0.0f, 0.0f, 0.0f), 100, 100, 1.0f, 1.0f);
 
-	glLinkProgram(pickingProgram);
-
-	//idLoc = glGetAttribLocation(pickingProgram,"id");
-    //vertex1Loc = glGetAttribLocation(pickingProgram, "position"); 
-	
-	projMatrix1Loc = glGetUniformLocation(pickingProgram, "projMatrix1");
-    viewMatrix1Loc = glGetUniformLocation(pickingProgram, "viewMatrix1");
-	
-	
-	id1Loc = glGetAttribLocation(p, "id");
-	vertexLoc = glGetAttribLocation(p,"position");
-    colorLoc = glGetAttribLocation(p, "color"); 
-	normalLoc = glGetAttribLocation(p, "normal");
-	texLoc = glGetAttribLocation(p, "texCoord");
 
     projMatrixLoc = glGetUniformLocation(p, "projMatrix");
     viewMatrixLoc = glGetUniformLocation(p, "viewMatrix");
@@ -379,10 +289,6 @@ void initShaders() {
 
 	matDiffLoc = glGetUniformLocation(p, "materialDiff");
 	matSpecLoc = glGetUniformLocation(p, "materialSpec");
-
-	curIdLoc = glGetUniformLocation(p, "curId");
-
-		
 
 
 }
@@ -431,9 +337,6 @@ void mouseButton(int button, int state, int x, int y)
 		else  // state = GLUT_DOWN	
 		{
 
-			curId = (ceil((float)pixel[1] / 64.0) - 1) * 4 + (ceil((float)pixel[2] / 64.0) - 1);
-			printf("curId: %d, %d,%d,%d\n",curId, pixel[0], pixel[1], pixel[2]);
-
 			xBase = x;
 			yBase = y;
 		}
@@ -461,6 +364,7 @@ void keyDown(unsigned char key, int x, int y) {
  GLenum errorCode;
 int main(int argc, char **argv) 
 {
+
 	// sets up glut
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
@@ -479,7 +383,8 @@ int main(int argc, char **argv)
 	glutKeyboardFunc(keyDown);
 
 
- 
+
+
 	// check if a particular extension is available on your platform
     glewInit();
     if (glewIsSupported("GL_VERSION_3_3"))
@@ -490,10 +395,12 @@ int main(int argc, char **argv)
         //exit(1);
     }
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.0,0.0,0.0,1.0);
+    glClearColor(1.0,1.0,1.0,1.0);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 	//glBlendEquation(GL_FUNC_SUBTRACT);
+
+
     initShaders();
 
 	initTex();
@@ -501,5 +408,7 @@ int main(int argc, char **argv)
     setupBuffers(); 
     glutMainLoop();
  
+	delete(pTerrain);
+
     return(0); 
 }
