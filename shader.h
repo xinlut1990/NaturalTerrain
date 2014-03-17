@@ -17,6 +17,7 @@ public:
 	virtual void setUniforms() = 0;
 	void setLight(const Light &light);
 	void setSampler(GLint sampler);
+	void setTime(float time);
 
 	GLuint projMatrixLoc;
 	GLuint viewMatrixLoc;
@@ -30,7 +31,7 @@ protected:
 	void printShaderInfoLog(GLuint obj);
 	void printProgramInfoLog(GLuint obj);
 
-	
+	float time;
 	GLint sampler;
 	Light light;
 

@@ -37,3 +37,9 @@ Shader* Renderable::getShader() const
 {
 	return shaderProgram;
 }
+
+void Renderable::setMatrices(const float *viewMatrix, const float *projMatrix)
+{
+	glUniformMatrix4fv(this->shaderProgram->projMatrixLoc,  1, false, projMatrix);
+    glUniformMatrix4fv(this->shaderProgram->viewMatrixLoc,  1, false, viewMatrix);
+}

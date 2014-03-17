@@ -3,7 +3,7 @@
 TerrainShader::TerrainShader(char* vertexFileName, char* fragmentFileName)
 	:Shader(vertexFileName, fragmentFileName)
 {
-	getUniformLocs();
+	this->getUniformLocs();
 }
 
 void TerrainShader::getUniformLocs()

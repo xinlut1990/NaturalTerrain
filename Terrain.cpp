@@ -21,28 +21,33 @@ Terrain::Terrain(Shader *program, const vec3 &center, const int width, const int
 	} else {
 		this->heightGenerator = new PerlinNoise(2,0.1,16,1,1);
 	}
-	
+
+	heightMap = new double*[height + 1];
+
+	for(int i = 0; i <= height; i++) {
+		heightMap[i] = new double[width + 1];
+		for(int j = 0; j <= width; j++) {
+			heightMap[i][j] = this->heightGenerator->GetHeight(j, i);
+		}
+	}
 
 	this->init();
 }
 
 Terrain::~Terrain()
 {
-	if(this->vertices != 0) {
-		delete(this->vertices);
-		this->vertices = 0;
+	for(int i = 0; i <= height; i++) {
+		delete[](heightMap[i]);
 	}
-	if(this->normals != 0) {
-		delete(this->normals);
-		this->normals = 0;
-	}
-	if(this->texCoords != 0) {
-		delete(this->texCoords);
-		this->texCoords = 0;
-	}
+	delete[](heightMap);
 
 	delete(this->heightGenerator);
 		this->heightGenerator = 0;
+}
+
+float Terrain::getHeight(int x, int y)
+{
+	return heightMap[y][x];
 }
 
 //fill the vertex buffer for current grid
@@ -52,10 +57,10 @@ void Terrain::fillGridVertices(int j, int i, int gridIdx, const vec3 &startPoint
 	//number of floats per vertex
 	int numPerV = 3; 
 
-	float height00 = this->heightGenerator->GetHeight(j, i);
-	float height10 = this->heightGenerator->GetHeight(j + 1, i);
-	float height01 = this->heightGenerator->GetHeight(j, i + 1);
-	float height11 = this->heightGenerator->GetHeight(j + 1, i + 1);
+	float height00 = this->getHeight(j, i);
+	float height10 = this->getHeight(j + 1, i);
+	float height01 = this->getHeight(j, i + 1);
+	float height11 = this->getHeight(j + 1, i + 1);
 
 	//(-1,-1)
 	//	 |

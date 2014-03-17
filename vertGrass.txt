@@ -16,14 +16,15 @@ out vec4 viewLightPos;
 
 void main() 
 {
-	if( texCoord.v < 0.1 )	{
-		position.x += sin(time);
+	vec4 pos = position;
+	if( texCoord.y > 0.9 )	{
+		pos.x += 0.1 * sin(time / 2000.0);
 	}
 
 	viewLightPos = viewMatrix * lightPos;
-	v = viewMatrix * position;
+	v = viewMatrix * pos;
 	n = normalize(viewMatrix * vec4(normal, 0.0));
     	
 	gl_TexCoord[0] = vec4(texCoord,0,0);
-    	gl_Position = projMatrix * viewMatrix * position;
+    	gl_Position = projMatrix * viewMatrix * pos;
 }

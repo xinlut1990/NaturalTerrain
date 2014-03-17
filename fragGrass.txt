@@ -14,8 +14,8 @@ varying vec4 v;
  
 void main()
 {	
-
 	vec4 color =  texture(tex, gl_TexCoord[0].st);
+
 	vec4 normal = n;
 
 	vec4 lightDir = normalize(viewLightPos - v);
@@ -25,5 +25,7 @@ void main()
 	vec4 diffuse = intensityDiff * materialDiff * color * clamp(dot(lightDir, normal),0.0, 1.0);
 
 	gl_FragColor = ambient + diffuse;
-
+	if(color.g < 0.2) {
+		gl_FragColor.a = 0.0;
+	}
 }

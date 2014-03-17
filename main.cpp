@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "glew\include\GL\glew.h"
 #include "glut\glut.h"
-
+#include <vector>
+#include <map>
 
 
 #include "myMath.h"
@@ -11,6 +13,8 @@
 #include "Light.h"
 #include "Terrain.h"
 #include "TerrainShader.h"
+#include "Grass.h"
+#include "GrassShader.h"
 
 // shader names
 char *vertexFileName = "vertex.txt";
@@ -24,6 +28,8 @@ int yPick;
 
 Terrain * pTerrain = NULL;
 Terrain * pWater = NULL;
+vector<Grass *> grasses;
+const int numGrass = 1000;
  
  
 // storage for matrices
@@ -34,10 +40,10 @@ Camera cam;
 
 Light light(vec4(4.0, 5.0, 5.0, 1.0), color(0.5, 0.5, 0.5, 1.0), color(0.5, 0.5, 0.5, 1.0));
 
-GLuint texName[2];
+GLuint texName[3];
 
 	GLuint buffers[3];
-int frame=0,time,timebase=0;
+int frame=0,time1,timebase=0;
 
 float xAngle = 0.0f;
 float yAngle = 0.0f;
@@ -67,6 +73,20 @@ void initTex() {
 		SOIL_FLAG_INVERT_Y
 		);
 	pWater->getShader()->setSampler(2);
+
+	glActiveTexture(GL_TEXTURE3);
+	texName[2] = SOIL_load_OGL_texture
+		(
+		"tallgrass.png",
+		SOIL_LOAD_AUTO,
+		SOIL_CREATE_NEW_ID,
+		SOIL_FLAG_INVERT_Y
+		);
+
+	for(int i = 0; i < numGrass; i++) {
+		grasses[i]->getShader()->setSampler(3);
+	}
+	
 
 	//glBindTexture(GL_TEXTURE_2D, texName[0]);
 	
@@ -110,25 +130,14 @@ void setupBuffers() {
 	
 }
  
-void setUniforms() {
- 
-    // must be called after glUseProgram
-	// set the variables for the shader
-	glUniformMatrix4fv(pTerrain->getShader()->projMatrixLoc,  1, false, projMatrix);
-    glUniformMatrix4fv(pTerrain->getShader()->viewMatrixLoc,  1, false, cam.getMatrix());
-	
-	glUniformMatrix4fv(pWater->getShader()->projMatrixLoc,  1, false, projMatrix);
-    glUniformMatrix4fv(pWater->getShader()->viewMatrixLoc,  1, false, cam.getMatrix());
-}
- 
 void renderScene(void) {
 
 	frame++;
-	time=glutGet(GLUT_ELAPSED_TIME);
-	if (time - timebase > 1000) {
+	time1=glutGet(GLUT_ELAPSED_TIME);
+	if (time1 - timebase > 1000) {
 		sprintf(s,"FPS:%4.2f",
-			frame*1000.0/(time-timebase));
-		timebase = time;
+			frame*1000.0/(time1-timebase));
+		timebase = time1;
 		frame = 0;
 	}
     glutSetWindowTitle(s);
@@ -143,14 +152,25 @@ void renderScene(void) {
 	pTerrain->loadIntoBuffer(buffers[0], buffers[1], buffers[2]);
 	pTerrain->getShader()->setLight(light);
 	pTerrain->beginRender();
-	setUniforms();
+	pTerrain->setMatrices(cam.getMatrix(), projMatrix);
 	pTerrain->render();
 
 	pWater->loadIntoBuffer(buffers[0], buffers[1], buffers[2]);
 	pWater->getShader()->setLight(light);
 	pWater->beginRender();
-	setUniforms();
+	pWater->setMatrices(cam.getMatrix(), projMatrix);
 	pWater->render();
+
+	for(int i = 0; i < numGrass; i++) {
+		grasses[i]->getShader()->setSampler(3);
+		grasses[i]->loadIntoBuffer(buffers[0], buffers[1], buffers[2]);
+		grasses[i]->getShader()->setLight(light);
+		grasses[i]->getShader()->setTime(time1);
+		grasses[i]->beginRender();
+		grasses[i]->setMatrices(cam.getMatrix(), projMatrix);
+		grasses[i]->render();
+	}
+	
 
 	glutSwapBuffers();
 }
@@ -160,10 +180,35 @@ void initShaders() {
 
 	Shader *p = new TerrainShader(vertexFileName, fragmentFileName);
 	Shader *p1 = new TerrainShader(vertexFileName, fragmentFileName);
+	Shader *pG = new GrassShader(vertGrassFileName, fragGrassFileName);
 
-	pTerrain = new Terrain(p, vec3(0.0f, 0.0f, 0.0f), 100, 100, 1.0f, 1.0f, false);
-	pWater = new Terrain(p1, vec3(0.0f, -4.0f, 0.0f), 100, 100, 1.0f, 1.0f, true);
+	float gridSize = 1.0f;
+	int size = 100;
+	pTerrain = new Terrain(p, vec3(0.0f, 0.0f, 0.0f), size, size, gridSize, gridSize, false);
+	pWater = new Terrain(p1, vec3(0.0f, -4.0f, 0.0f), size, size, gridSize, gridSize, true);
 
+	map<pair<int,int>, bool> exist;
+	for(int i = 0; i < numGrass; i++) {
+		//srand (1);
+		int x = rand() % size;
+		
+		//srand (1);
+		int z = rand() % size;
+
+		while(exist.find(pair<int,int>(x, z)) != exist.end()) {
+			x = rand() % size;
+			z = rand() % size;
+		}
+		exist[pair<int,int>(x, z)] = true;
+
+
+		float xMid = - size * gridSize / 2 + x * gridSize + gridSize / 2;
+		float zMid = - size * gridSize / 2 + z * gridSize + gridSize / 2;
+
+		float yMid = pTerrain->getHeight(x, z);
+		//float y = pTerrain->heightGenerator()
+		grasses.push_back( new Grass(pG, vec3(xMid, yMid, zMid)));
+	}
 
 }
 
@@ -284,5 +329,9 @@ int main(int argc, char **argv)
  
 	delete(pTerrain);
 	delete(pWater);
+	for(int i = 0; i < numGrass; i++) {
+		delete(grasses[i]);
+	}
+
     return(0); 
 }

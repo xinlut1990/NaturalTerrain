@@ -3,7 +3,7 @@
 Shader::Shader(char* vertexFileName, char* fragmentFileName)
 {
 	this->program = buildShader(vertexFileName, fragmentFileName);
-
+	
 }
 
 GLuint Shader::buildShader(char* vertexFileName, char* fragmentFileName) {
@@ -79,3 +79,7 @@ void Shader::setLight(const Light &light)
 	this->light = light;
 }
 
+void Shader::setTime(float time)
+{
+	this->time = time;
+}

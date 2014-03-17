@@ -10,19 +10,35 @@ public:
 		normLoc = -1; 
 		texLoc = -1;
 
-		vertSize = 0;
-		normSize = 0;
-		texSize = 0;
 
 		this->vertices = 0;
 		this->colors = 0;
 		this->normals = 0;
 		this->texCoords = 0;
 	};
-	~Renderable(){};
+	~Renderable(){
+
+		if(this->vertices != NULL) {
+			delete(this->vertices);
+			this->vertices = NULL;
+		}
+		if(this->normals != NULL) {
+			delete(this->normals);
+			this->normals = NULL;
+		}
+		if(this->texCoords != NULL) {
+			delete(this->texCoords);
+			this->texCoords = NULL;
+		}
+		if(this->shaderProgram != NULL) {
+			delete(this->shaderProgram);
+			this->shaderProgram = NULL;
+		}
+	};
 	void loadIntoBuffer(GLint vertObj, GLint normObj, GLint texObj);
 	void beginRender();
 	void render();
+	void setMatrices(const float *viewMatrix, const float *projMatrix);
 
 	Shader* getShader() const;
 	
