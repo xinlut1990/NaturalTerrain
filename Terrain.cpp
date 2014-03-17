@@ -1,6 +1,6 @@
 #include "Terrain.h"
 
-Terrain::Terrain(GLint program, const vec3 &center, const int width, const int height, float gridW, float gridH):
+Terrain::Terrain(Shader *program, const vec3 &center, const int width, const int height, float gridW, float gridH, bool isFlat):
 	Renderable(program), center(center), width(width), height(height), gridW(gridW), gridH(gridH)
 {
 	// one grid has 6 vertices
@@ -12,11 +12,16 @@ Terrain::Terrain(GLint program, const vec3 &center, const int width, const int h
 	this->normals = new float[this->normSize];
 	this->texCoords = new float[this->texSize];
 
-	this->setVertLoc( glGetAttribLocation(shaderProgram,"position") );
-	this->setNormLoc( glGetAttribLocation(shaderProgram, "normal") );
-	this->setTexLoc( glGetAttribLocation(shaderProgram, "texCoord") );
+	this->setVertLoc( glGetAttribLocation(shaderProgram->program,"position") );
+	this->setNormLoc( glGetAttribLocation(shaderProgram->program, "normal") );
+	this->setTexLoc( glGetAttribLocation(shaderProgram->program, "texCoord") );
 
-	this->heightGenerator = new PerlinNoise(2,0.1,16,1,1);
+	if(isFlat) {
+		this->heightGenerator = new PerlinNoise(1,1,0,1,1);
+	} else {
+		this->heightGenerator = new PerlinNoise(2,0.1,16,1,1);
+	}
+	
 
 	this->init();
 }
@@ -47,15 +52,10 @@ void Terrain::fillGridVertices(int j, int i, int gridIdx, const vec3 &startPoint
 	//number of floats per vertex
 	int numPerV = 3; 
 
-	//float height00 = this->heightGenerator->GetHeight(j, i);
-	//float height10 = this->heightGenerator->GetHeight(j + 1, i);
-	//float height01 = this->heightGenerator->GetHeight(j, i + 1);
-	//float height11 = this->heightGenerator->GetHeight(j + 1, i + 1);
-
-	float height00 = 0;
-	float height10 = 0;
-	float height01 = 0;
-	float height11 = 0;
+	float height00 = this->heightGenerator->GetHeight(j, i);
+	float height10 = this->heightGenerator->GetHeight(j + 1, i);
+	float height01 = this->heightGenerator->GetHeight(j, i + 1);
+	float height11 = this->heightGenerator->GetHeight(j + 1, i + 1);
 
 	//(-1,-1)
 	//	 |

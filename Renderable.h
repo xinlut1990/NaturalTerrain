@@ -1,10 +1,10 @@
-#include "glew\include\GL\glew.h"
-#include "glut\glut.h"
+#pragma once
+#include "shader.h"
 
 class Renderable 
 {
 public:
-	Renderable(GLint program) : shaderProgram(program)
+	Renderable(Shader* program) : shaderProgram(program)
 	{ 
 		vertLoc = -1; 
 		normLoc = -1; 
@@ -20,9 +20,11 @@ public:
 		this->texCoords = 0;
 	};
 	~Renderable(){};
-	void loadIntoBuffer();
+	void loadIntoBuffer(GLint vertObj, GLint normObj, GLint texObj);
 	void beginRender();
 	void render();
+
+	Shader* getShader() const;
 	
 protected:
 
@@ -30,7 +32,7 @@ protected:
 	void setNormLoc(GLint normLoc) { this->normLoc = normLoc;}; //set attribute location of normal
 	void setTexLoc(GLint texLoc) { this->texLoc = texLoc;}; //set attribute location of texture coord
 
-	GLint shaderProgram;
+	Shader* shaderProgram;
 
 	GLint vertLoc;
 	GLint normLoc;

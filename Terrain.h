@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include "myMath.h"
 #include "Renderable.h"
@@ -8,7 +10,7 @@ using namespace std;
 class Terrain : public Renderable
 {
 public:
-	Terrain(GLint program, const vec3 &center, const int width, const int height, float gridW, float gridH);
+	Terrain(Shader *program, const vec3 &center, const int width, const int height, float gridW, float gridH, bool isFlat);
 	~Terrain();
 	void init();
 

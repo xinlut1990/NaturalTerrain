@@ -83,25 +83,30 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="bitmap.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="fileAccessor.cpp" />
+    <ClCompile Include="GrassShader.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="myMath.cpp" />
     <ClCompile Include="noise.cpp" />
     <ClCompile Include="Renderable.cpp" />
+    <ClCompile Include="shader.cpp" />
     <ClCompile Include="Terrain.cpp" />
+    <ClCompile Include="TerrainShader.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="bitmap.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="fileAccessor.h" />
+    <ClInclude Include="GrassShader.h" />
     <ClInclude Include="noise.h" />
+    <ClInclude Include="shader.h" />
     <ClInclude Include="Terrain.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="myMath.h" />
     <ClInclude Include="Renderable.h" />
     <ClInclude Include="SOIL.h" />
+    <ClInclude Include="TerrainShader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="frag.txt" />

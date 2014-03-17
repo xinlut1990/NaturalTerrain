@@ -5,25 +5,19 @@
 
 
 
-#include "fileAccessor.h"
 #include "myMath.h"
 #include "SOIL.h"
 #include "Camera.h"
 #include "Light.h"
-#include "bitmap.h"
 #include "Terrain.h"
+#include "TerrainShader.h"
 
 // shader names
 char *vertexFileName = "vertex.txt";
 char *fragmentFileName = "frag.txt";
 
-char *vertPickingFileName = "vert_picking.txt";
-char *fragPickingFileName = "frag_picking.txt";
-unsigned char *image;
-
-GLuint pickingProgram;
-GLuint p;
-GLuint p1;
+char *vertGrassFileName = "vertGrass.txt";
+char *fragGrassFileName = "fragGrass.txt";
 
 int xPick;
 int yPick;
@@ -31,25 +25,6 @@ int yPick;
 Terrain * pTerrain = NULL;
 Terrain * pWater = NULL;
  
-// uniform var locations
-GLuint projMatrixLoc, viewMatrixLoc;
-GLuint projMatrix1Loc , viewMatrix1Loc ;
-GLuint timeLoc;
-GLuint lightLoc;
-GLuint samplerLoc;
-GLuint samplerNormalLoc;
-
-
-GLuint diffLoc;
-GLuint specLoc;
-
-GLuint matDiffLoc;
-GLuint matSpecLoc;
-
-int curId = 0;
- 
-// vert array obj Id
-GLuint vert[3];
  
 // storage for matrices
 float projMatrix[16];
@@ -59,9 +34,9 @@ Camera cam;
 
 Light light(vec4(4.0, 5.0, 5.0, 1.0), color(0.5, 0.5, 0.5, 1.0), color(0.5, 0.5, 0.5, 1.0));
 
-	GLuint texName[2];
+GLuint texName[2];
 
-
+	GLuint buffers[3];
 int frame=0,time,timebase=0;
 
 float xAngle = 0.0f;
@@ -81,17 +56,17 @@ void initTex() {
 		SOIL_CREATE_NEW_ID,
 		SOIL_FLAG_INVERT_Y
 		);
-	
+	pTerrain->getShader()->setSampler(1);
 
 	glActiveTexture(GL_TEXTURE2);
 	texName[1] = SOIL_load_OGL_texture
 		(
-		"normal.bmp",
+		"water.bmp",
 		SOIL_LOAD_AUTO,
 		SOIL_CREATE_NEW_ID,
 		SOIL_FLAG_INVERT_Y
 		);
-
+	pWater->getShader()->setSampler(2);
 
 	//glBindTexture(GL_TEXTURE_2D, texName[0]);
 	
@@ -127,46 +102,23 @@ void changeSize(int w, int h) {
  
 void setupBuffers() {
 
+
+
+	glGenBuffers(3, buffers);
+
 	
-	//pWater->loadIntoBuffer();
-	pTerrain->loadIntoBuffer();
+	
 }
  
 void setUniforms() {
  
     // must be called after glUseProgram
 	// set the variables for the shader
-    glUniformMatrix4fv(projMatrixLoc,  1, false, projMatrix);
-    glUniformMatrix4fv(viewMatrixLoc,  1, false, cam.getMatrix());
-	glUniform1f(timeLoc, time);
-
-
-	glUniform1i(samplerLoc , 1);
-	glUniform1i(samplerNormalLoc , 2);
-
-	vec4 lightPos = light.getPosition();
-	glUniform4f(lightLoc, lightPos.x, lightPos.y, lightPos.z, lightPos.w);
-
-	color diff = light.getIntensityDiff();
-	glUniform4f(diffLoc, diff.r, diff.g, diff.b, diff.a);
-
-	color spec = light.getIntensitySpec();
-	glUniform4f(specLoc, spec.r, spec.g, spec.b, spec.a);
-
-	color matDiff(1.0, 1.0, 1.0, 1.0);
-	glUniform4f(matDiffLoc, matDiff.r, matDiff.g, matDiff.b, matDiff.a);
-
-	color matSpec(1.0, 1.0, 1.0, 1.0);
-	glUniform4f(matSpecLoc, matSpec.r, matSpec.g, matSpec.b, matSpec.a);
-
-
-
-}
-
-void setUniformsPick()
-{
-	glUniformMatrix4fv(projMatrix1Loc,  1, false, projMatrix);
-    glUniformMatrix4fv(viewMatrix1Loc,  1, false, cam.getMatrix());
+	glUniformMatrix4fv(pTerrain->getShader()->projMatrixLoc,  1, false, projMatrix);
+    glUniformMatrix4fv(pTerrain->getShader()->viewMatrixLoc,  1, false, cam.getMatrix());
+	
+	glUniformMatrix4fv(pWater->getShader()->projMatrixLoc,  1, false, projMatrix);
+    glUniformMatrix4fv(pWater->getShader()->viewMatrixLoc,  1, false, cam.getMatrix());
 }
  
 void renderScene(void) {
@@ -187,103 +139,30 @@ void renderScene(void) {
 	cam.placeCam(0,10,10,0,0,0);
 	cam.zoomCam(zoom);
 	cam.rotateCam(xAngle, yAngle);
-
+	
+	pTerrain->loadIntoBuffer(buffers[0], buffers[1], buffers[2]);
+	pTerrain->getShader()->setLight(light);
 	pTerrain->beginRender();
 	setUniforms();
 	pTerrain->render();
 
-	//pWater->beginRender();
-	//setUniforms();
-	//pWater->render();
+	pWater->loadIntoBuffer(buffers[0], buffers[1], buffers[2]);
+	pWater->getShader()->setLight(light);
+	pWater->beginRender();
+	setUniforms();
+	pWater->render();
 
 	glutSwapBuffers();
-}
- 
-
-void printShaderInfoLog(GLuint obj)
-{
-    int infologLength = 0;
-    int charsWritten  = 0;
-    char *infoLog;
- 
-    glGetShaderiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
- 
-    if (infologLength > 0)
-    {
-        infoLog = (char *)malloc(infologLength);
-        glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
-        printf("%s\n",infoLog);
-        free(infoLog);
-    }
-}
- 
-void printProgramInfoLog(GLuint obj)
-{
-    int infologLength = 0;
-    int charsWritten  = 0;
-    char *infoLog;
- 
-    glGetProgramiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
- 
-    if (infologLength > 0)
-    {
-        infoLog = (char *)malloc(infologLength);
-        glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
-        printf("%s\n",infoLog);
-        free(infoLog);
-    }
-}
-
-GLuint buildShader(char* vertexFileName, char* fragmentFileName) {
-	// program and shader Id
-	GLuint p;
-	GLuint v,f;
-	char *vertShader = NULL,*fragShader = NULL;
-
-	v = glCreateShader(GL_VERTEX_SHADER);
-    f = glCreateShader(GL_FRAGMENT_SHADER);
-    vertShader = getTxtFile(vertexFileName);
-    fragShader = getTxtFile(fragmentFileName);
-    const char * vv = vertShader;
-    const char * ff = fragShader;
-    glShaderSource(v, 1, &vv,NULL);
-    glShaderSource(f, 1, &ff,NULL);
-    free(vertShader);
-	free(fragShader);
-    glCompileShader(v);
-    glCompileShader(f);
-    printShaderInfoLog(v);
-    printShaderInfoLog(f);
-    p = glCreateProgram();
-    glAttachShader(p,v);
-    glAttachShader(p,f);
-    glLinkProgram(p);
-    printProgramInfoLog(p);
-
-	return p;
 }
  
 void initShaders() {
  
 
-	p = buildShader(vertexFileName, fragmentFileName);
-	p1 = buildShader(vertexFileName, fragmentFileName);
+	Shader *p = new TerrainShader(vertexFileName, fragmentFileName);
+	Shader *p1 = new TerrainShader(vertexFileName, fragmentFileName);
 
-	pTerrain = new Terrain(p, vec3(0.0f, 0.0f, 0.0f), 100, 100, 1.0f, 1.0f);
-	pWater = new Terrain(p, vec3(0.0f, 5.0f, 0.0f), 100, 100, 1.0f, 1.0f);
-
-    projMatrixLoc = glGetUniformLocation(p, "projMatrix");
-    viewMatrixLoc = glGetUniformLocation(p, "viewMatrix");
-	timeLoc = glGetUniformLocation(p, "time");
-	lightLoc = glGetUniformLocation(p, "lightPos");
-	samplerLoc = glGetUniformLocation(p, "tex");
-	samplerNormalLoc = glGetUniformLocation(p, "texNormal");
-
-	diffLoc = glGetUniformLocation(p, "intensityDiff");
-	specLoc = glGetUniformLocation(p, "intensitySpec");
-
-	matDiffLoc = glGetUniformLocation(p, "materialDiff");
-	matSpecLoc = glGetUniformLocation(p, "materialSpec");
+	pTerrain = new Terrain(p, vec3(0.0f, 0.0f, 0.0f), 100, 100, 1.0f, 1.0f, false);
+	pWater = new Terrain(p1, vec3(0.0f, -4.0f, 0.0f), 100, 100, 1.0f, 1.0f, true);
 
 
 }

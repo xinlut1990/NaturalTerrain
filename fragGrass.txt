@@ -5,9 +5,7 @@ uniform mat4 viewMatrix, projMatrix;
 uniform sampler2D tex;
 
 uniform vec4 intensityDiff;
-uniform vec4 intensitySpec;
 uniform vec4 materialDiff;
-uniform vec4 materialSpec;
 
 in vec4 viewLightPos;
 
@@ -21,14 +19,11 @@ void main()
 	vec4 normal = n;
 
 	vec4 lightDir = normalize(viewLightPos - v);
-	vec4 E = normalize(-v);
-	vec4 R = normalize(reflect(-lightDir, normal));
 
-	vec4 ambient = color * 0.2;
+	vec4 ambient = color * 0.4;
 	ambient.a = 1.0;
 	vec4 diffuse = intensityDiff * materialDiff * color * clamp(dot(lightDir, normal),0.0, 1.0);
-	vec4 specular = intensitySpec * materialSpec * color * pow(clamp(dot(E, R), 0.0, 1.0), 2);
 
-	gl_FragColor = ambient + diffuse + specular;
+	gl_FragColor = ambient + diffuse;
 
 }

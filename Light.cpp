@@ -18,17 +18,17 @@ Light::~Light()
 {
 }
 
-vec4 Light::getPosition()
+vec4 Light::getPosition() const
 {
 	return position;
 }
 
-color Light::getIntensityDiff()
+color Light::getIntensityDiff() const
 {
 	return intensityDiff;
 }
 
-color Light::getIntensitySpec()
+color Light::getIntensitySpec() const
 {
 	return intensitySpec;
 }
